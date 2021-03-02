@@ -34,7 +34,11 @@ namespace CGL
   std::vector<Vector3D> BezierPatch::evaluateStep(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return std::vector<Vector3D>();
+      vector<Vector3D> intermediates;
+      for (int i=0; i < points.size()-1; i++) {
+          intermediates.push_back(lerp(points[i], points[i+1], t));
+      }
+      return intermediates;
   }
 
   /**
@@ -47,7 +51,14 @@ namespace CGL
   Vector3D BezierPatch::evaluate1D(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return Vector3D();
+    if (points.size() == 1)
+        { return points[0]; }
+
+    vector<Vector3D> curve;
+    for (int i = 0; i < points.size()-1; i++) {
+        curve.push_back(lerp(points[i], points[i+1], t));
+    }
+    return evaluate1D(curve, t);
   }
 
   /**
@@ -60,7 +71,10 @@ namespace CGL
   Vector3D BezierPatch::evaluate(double u, double v) const
   {
     // TODO Part 2.
-    return Vector3D();
+    vector<Vector3D> curves;
+    for (int i=0; i < controlPoints.size(); i++)
+        { curves.push_back(evaluate1D(controlPoints[i], u)); }
+    return evaluate1D(curves, v);
   }
 
   Vector3D Vertex::normal( void ) const
@@ -88,6 +102,10 @@ namespace CGL
   }
 
   Vector2D lerp(Vector2D p0, Vector2D p1, float t) {
+      return ((1-t) * p0) + (t*p1);
+  }
+
+  Vector3D lerp(Vector3D p0, Vector3D p1, float t) {
       return ((1-t) * p0) + (t*p1);
   }
 

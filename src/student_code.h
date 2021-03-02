@@ -19,6 +19,7 @@ namespace CGL {
     void upsample(HalfedgeMesh& mesh);
   };
   Vector2D lerp(Vector2D p0, Vector2D p1, float t);
+  Vector3D lerp(Vector3D p0, Vector3D p1, float t);
 }
 
 #endif // STUDENT_CODE_H
