@@ -14,9 +14,13 @@ namespace CGL
    * @return A vector containing intermediate points or the final interpolated vector
    */
   std::vector<Vector2D> BezierCurve::evaluateStep(std::vector<Vector2D> const &points)
-  { 
+  {
     // TODO Part 1.
-    return std::vector<Vector2D>();
+    vector<Vector2D> intermediates;
+    for (int i=0; i < points.size()-1; i++) {
+        intermediates.push_back(lerp(points[i], points[i+1], t));
+    }
+    return intermediates;
   }
 
   /**
@@ -53,8 +57,8 @@ namespace CGL
    * @param v         Scalar interpolation parameter (along the other axis)
    * @return Final interpolated vector
    */
-  Vector3D BezierPatch::evaluate(double u, double v) const 
-  {  
+  Vector3D BezierPatch::evaluate(double u, double v) const
+  {
     // TODO Part 2.
     return Vector3D();
   }
@@ -83,7 +87,9 @@ namespace CGL
     return VertexIter();
   }
 
-
+  Vector2D lerp(Vector2D p0, Vector2D p1, float t) {
+      return ((1-t) * p0) + (t*p1);
+  }
 
   void MeshResampler::upsample( HalfedgeMesh& mesh )
   {
@@ -94,14 +100,14 @@ namespace CGL
     // 1. Compute new positions for all the vertices in the input mesh, using the Loop subdivision rule,
     // and store them in Vertex::newPosition. At this point, we also want to mark each vertex as being
     // a vertex of the original mesh.
-    
+
     // 2. Compute the updated vertex positions associated with edges, and store it in Edge::newPosition.
-    
+
     // 3. Split every edge in the mesh, in any order. For future reference, we're also going to store some
     // information about which subdivide edges come from splitting an edge in the original mesh, and which edges
     // are new, by setting the flat Edge::isNew. Note that in this loop, we only want to iterate over edges of
     // the original mesh---otherwise, we'll end up splitting edges that we just split (and the loop will never end!)
-    
+
     // 4. Flip any new edge that connects an old and new vertex.
 
     // 5. Copy the new vertex positions into final Vertex::position.
