@@ -1,104 +1,185 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>&lt;center&gt; &midast;&midast;CS 184&colon; Computer Graphics and Imaging&comma; Spring 2021&midast;&midast; &lt;&excl;-- omit in toc --&gt;</title>
+        <style>
+</style>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+        
+        <script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <h1 id="center-cs-184-computer-graphics-and-imaging-spring-2021-"><center> <strong>CS 184: Computer Graphics and Imaging, Spring 2021</strong> <!-- omit in toc --></h1>
+<h2 id="center-project-12-rasterizer-"><center> <strong>Project 12 Rasterizer</strong> <!-- omit in toc --></h2>
+<h2 id="center-frank-warren-center-"><center> <strong>Frank Warren</strong> </center> <!-- omit in toc --></h2>
+<h2 id="contents-"><strong>Contents</strong> <!-- omit in toc --></h2>
+<ul>
+<li><a href="#overview"><strong>Overview</strong></a></li>
+<li><a href="#section-i-bezier-curves-and-surfaces"><strong>Section I: Bezier Curves and Surfaces</strong></a>
+<ul>
+<li><a href="#part-1-de-casteljaus-algorithm"><strong>Part 1: de Casteljau's Algorithm</strong></a></li>
+<li><a href="#part-2-bezier-surfaces-with-separable-1d-de-casteljau"><strong>Part 2: Bezier Surfaces with Separable 1D de Casteljau</strong></a></li>
+</ul>
+</li>
+<li><a href="#section-ii-triangle-meshes-and-half-edge-data"><strong>Section II: Triangle Meshes and Half-Edge Data</strong></a>
+<ul>
+<li><a href="#part-3-area-weighted-vertex-normals"><strong>Part 3: Area-Weighted Vertex Normals</strong></a></li>
+<li><a href="#part-4-edge-flip"><strong>Part 4: Edge Flip</strong></a></li>
+<li><a href="#part-5-edge-split"><strong>Part 5: Edge Split</strong></a></li>
+<li><a href="#part-6-loop-subdivision-for-mesh-upsampling"><strong>Part 6: Loop Subdivision for Mesh Upsampling</strong></a></li>
+</ul>
+</li>
+</ul>
+<h2 id="overview"><strong>Overview</strong></h2>
+<p>The purpose of this project was to implement explore topics on geometric modeing, including Bezier curves and surfaces, the de Casteljau algorithm for calculating those, manipulating triangle meshes, and loop subdivision. The first section of this project deals with Bezier curves and surfaces, and the second section deals with triangle meshes and the half-edge data structure.<br>
+I completed this project alone.</p>
+<h2 id="section-i-bezier-curves-and-surfaces"><strong>Section I: Bezier Curves and Surfaces</strong></h2>
+<p><a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve">Bezier curves</a> are the most popular way to create curves from a set of points. A Bezier Curve can be defined with two or more control points. <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(n+1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span> points are needed to define a Bezier curve of degree <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">n</span></span></span></span>. There's multiple ways to define a Bezier curve given a set of points. One could use linear algebra to define a degree <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">n</span></span></span></span> polynomial given <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(n+1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathdefault">n</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span> points, and plot the polynomial to include the start and end points. There is a more practical method called <a href="https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm">de Casteljau's algorithm</a>.</p>
+<h3 id="part-1-de-casteljaus-algorithm"><strong>Part 1: de Casteljau's Algorithm</strong></h3>
+<p><a href="https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm">de Casteljau's algorithm</a> is a recursive algorithm for evaluating Bezier curves. Basically, it takes a set of points along with a parameter <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span> and performs linear interpolations on each pair of neighboring points. Then this same calculation is performed recursively on these intermediate points using the same parameter <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span> until no more pairs of intermediate points can be found. At the end of this algorithm, we are left with a single point that will be on the final Bezier curve.</p>
+<p>If we perform this algorithm for a large number of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span> values, we will be able to create a smooth curve.<br>
+Here is an animation that illustrates the relationship between <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span>, the control points, and the final curve:</p>
+<center><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/bezier.gif" width="250"></center>  
+<p>Here's an example of what the recursive de Casteljau algorithm looks like at each step for some set of 6 control points and some <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span>. In the last subdivision, the final point is shown in red. In the final image, I show the final result for a different <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span> value.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_2.png" width=250></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_3.png" width=250></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_4.png" width=250></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Before</td>
+<td style="text-align:center">First subdivision</td>
+<td style="text-align:center">second subdivision</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_5.png" width=250></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_6.png" width=250></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_7.png" width=250></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Third subdivision</td>
+<td style="text-align:center">Fourth subdivision</td>
+<td style="text-align:center">Fifth (final) subdivision</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_8.png" width=250></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Different <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.61508em;vertical-align:0em;"></span><span class="mord mathdefault">t</span></span></span></span> value</td>
+</tr>
+</tbody>
+</table>
+<h3 id="part-2-bezier-surfaces-with-separable-1d-de-casteljau"><strong>Part 2: Bezier Surfaces with Separable 1D de Casteljau</strong></h3>
+<p>In this part, the de Casteljau algorithm will be extended to create curved surfaces in three dimensions. The implementation for this is pretty much the same as for Bezier curves, except now we have 4 rows of 4 points.Each row of four points represents a Bezier curve that is parameterized by some value <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi></mrow><annotation encoding="application/x-tex">u</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">u</span></span></span></span>, and after the four Bezier curves are created, then we can create another Bezier curve along the other axis by using the four points at <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi></mrow><annotation encoding="application/x-tex">u</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">u</span></span></span></span> on the four Bezier curves, and parameterizing them on <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span></span></span></span>.</p>
+<p>Here's the <a href="https://en.wikipedia.org/wiki/Utah_teapot">Utah teapot</a> rendered using Bezier surfaces:</p>
+<center><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_9.png" width=600></center>
+<h2 id="section-ii-triangle-meshes-and-half-edge-data"><strong>Section II: Triangle Meshes and Half-Edge Data</strong></h2>
+<p>In this section, we will use triangle meshes to model 3D objects. Although Bezier surfaces are better at representing curves smoothly and require less memory than triangle meshes, triangle meshes are used more frequently because Bezier surfaces because it's difficult to calculate their intersections with other surfaces.</p>
+<p>A convenient data structure for triangle meshes is the Half-Edge data structure. The main idea for this data structure is that each face in the mesh is composed of half edges such that the ordering of the each face is consistent. To enable convnient iteration of vertices, edges, and faces, each half-edge has useful members. Also, there are Vertex, Edge, and Face objects which have their own useful functions.</p>
+<pre><code class="language-C++"><div><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Halfedge</span> {</span>
+  Halfedge *twin;   <span class="hljs-comment">// the Halfedge opposite to this Halfedge</span>
+  Halfedge *next;   <span class="hljs-comment">// the next Halfedge on the same face as this Halfedge</span>
+  Vertex *vertex;   <span class="hljs-comment">// the tail of this Halfedge</span>
+  Edge *edge;       <span class="hljs-comment">// the undirected edge on the mesh</span>
+  Face *face;       <span class="hljs-comment">// the face to which this Halfedge belongs</span>
+}
+</div></code></pre>
+<h3 id="part-3-area-weighted-vertex-normals"><strong>Part 3: Area-Weighted Vertex Normals</strong></h3>
+<p>A simple method for shading known as <a href="https://en.wikipedia.org/wiki/Shading#Flat_shading">flat shading</a> is already implemented at this point in the project. In this shading technique, lighting is evaluated once per face, where the intensity of the light to be displayed on a face is determined based on the normal to that face. (i.e. how far away the face is from the light, and the orientation of the face in relation to the light). Because the light on each face is only evaluated once per face, the result is not very smooth.</p>
+<p>To achieve better shading, we can interpolate the surface normals of the faces. This is done by calculating, for each vertex, a normalized vector derived from the weighted sum of the surface normals of each face it belongs to. A do-while loop can be used to iterate through the faces associated with some vertex <code>v</code>:</p>
+<pre><code class="language-C++"><div>Halfedge CIter h = v-&gt;halfedge();
+<span class="hljs-keyword">do</span> {
+  <span class="hljs-comment">// Process h-&gt;face() in this loop</span>
+  h = h-&gt;twin()-&gt;next();
+} <span class="hljs-keyword">while</span> (h != v-&gt;halfedge());
+</div></code></pre>
+<p>Here's what the Utah teapot looks with flat shading, and with Phong shading:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_10.png" width=600></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_11.png" width=600></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Flat Shading</td>
+<td style="text-align:center">Phong Shading</td>
+</tr>
+</tbody>
+</table>
+<h3 id="part-4-edge-flip"><strong>Part 4: Edge Flip</strong></h3>
+<p>One of the basic operations that a half-edge data structure needs to provide is edge flips. Given a pair of triangles, a flip operation performed on their shared edge will convert the original pair of triangles into a new pair that share an edge formed by the vertices that were <em>not</em> in the original shared edge:</p>
+<center><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/flip.jpg" width=500></center>  
+<p>Implementing this means operation changing the pointers for each half edge object relating to the two triangles. The process itself isn't too bad, especially because the process is fully spelled out <a href="http://15462.courses.cs.cmu.edu/fall2015content/misc/HalfedgeEdgeOpImplementationGuide.pdf">here</a>. The process is further simplified since halfedge objects have a member function that can set all of its pointers at once:</p>
+<pre><code class="language-C++"><div><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setNeighbors</span><span class="hljs-params">(HalfedgeIter next, HalfedgeIter twin, VertexIter vertex, EdgeIter edge, FaceIter face)</span>
+</span></div></code></pre>
+<p>Here's a mesh of a cute cow before and after some edge flips:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_13.png" width=600></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_14.png" width=600></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Before flips</td>
+<td style="text-align:center">After flips</td>
+</tr>
+</tbody>
+</table>
+<h3 id="part-5-edge-split"><strong>Part 5: Edge Split</strong></h3>
+<p>Another basic operation for half-edge data structures is edge splits. Given a pair of triangles, a split operation on their shared edge creates a new vertex in the center of the edge and then edges are formed between the new vertex and every other vertex in the two triangles:</p>
+<center><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/split.jpg" width=500></center>  
+<p>The implementation for this is similar to the implementation for edge flips. Basically, I drew two diagrams of set of triangles with a shared edge, before and after a split operation on the shared edge. The diagrams had all of the vertices, faces, edges, and half edges labelled. Writing the split function was just a matter of carefully representing the &quot;after&quot; diagram in terms of the half-edge object and pointers.</p>
+<p>Here's a cube before and after some flip and split operations:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_16.png" width=600></th>
+<th style="text-align:center"><img src="file:////home/fbwarren/Desktop/cs184/p2-meshedit-sp21-teamname1/docs/images/proj2_17.png" width=600></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Before</td>
+<td style="text-align:center">After</td>
+</tr>
+</tbody>
+</table>
+<h3 id="part-6-loop-subdivision-for-mesh-upsampling"><strong>Part 6: Loop Subdivision for Mesh Upsampling</strong></h3>
 
-<head>
-  <style>
-    body {
-      padding: 100px;
-      width: 1000px;
-      margin: auto;
-      text-align: left;
-      font-weight: 300;
-      font-family: 'Open Sans', sans-serif;
-      color: #121212;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4 {
-      font-family: 'Source Sans Pro', sans-serif;
-    }
-  </style>
-  <title>CS 184 Mesh Editor</title>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
-</head>
-
-
-<body>
-
-  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
-  <h1 align="middle">Project 2: Mesh Editor</h1>
-  <h2 align="middle">YOUR NAME, CS184-??</h2>
-
-  <br><br>
-
-  <div>
-
-    <h2 align="middle">Overview</h2>
-    <p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole.
-      Share your thoughts on what interesting things you've learned from completing the project.</p>
-
-    <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
-
-    <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
-
-    <p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a
-      column in that row. You might find this useful for framing and showing your result images in an organized fashion.
-    </p>
-
-    <div align="middle">
-      <table style="width=100%">
-        <tr>
-          <td>
-            <img src="images/image1.png" align="middle" width="400px" />
-            <figcaption align="middle">Caption goes here.</figcaption>
-          </td>
-          <td>
-            <img src="images/image2.png" align="middle" width="400px" />
-            <figcaption align="middle">Caption goes here.</figcaption>
-          </td>
-        </tr>
-        <br>
-        <tr>
-          <td>
-            <img src="images/image3.png" align="middle" width="400px" />
-            <figcaption align="middle">Caption goes here.</figcaption>
-          </td>
-          <td>
-            <img src="images/image4.png" align="middle" width="400px" />
-            <figcaption align="middle">Caption goes here.</figcaption>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-
-    <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
-
-
-
-    <h2 align="middle">Section II: Sampling</h2>
-
-    <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
-
-
-    <h3 align="middle">Part 4: Half-edge flip</h3>
-
-
-    <h3 align="middle">Part 5: Half-edge split</h3>
-
-
-    <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
-
-
-
-    <h2 align="middle">Section III: Optional Extra Credit</h2>
-    <p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
-
-    <h3 align="middle">Part 7: Design your own mesh!</h3>
-
-</body>
-
-</html>
+    </body>
+    </html>

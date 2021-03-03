@@ -280,9 +280,37 @@ namespace CGL
     // 1. Compute new positions for all the vertices in the input mesh, using the Loop subdivision rule,
     // and store them in Vertex::newPosition. At this point, we also want to mark each vertex as being
     // a vertex of the original mesh.
+    // iterate over all edges in the mesh
+    VertexIter v = mesh.verticesBegin();
+    while (v != mesh.verticesEnd()) {
+        // get the next edge NOW!
+        VertexIter nextVertex = v;
+        nextVertex++;
+        v->isNew=false;
+        v->computeCentroid();
 
+        int n = v->degree();
+        float u;
+        u = (n == 3) ? (3*n)/16 : 3/8;
+
+        v->newPosition = ((1-u) * v->position) + (u * v->centroid);
+        v = nextVertex;
+    }
     // 2. Compute the updated vertex positions associated with edges, and store it in Edge::newPosition.
-
+    Vector3D a, b, c, d;
+    EdgeIter e = mesh.edgesBegin();
+    while (v != mesh.verticesEnd()) {
+        // get the next edge NOW!
+        EdgeIter nextEdge = e;
+        nextEdge++;
+        HalfedgeIter edge = e->halfedge();
+        a = edge->vertex()->position;
+        b = edge->twin()->vertex()->position;
+        c = edge->next()->next()->vertex()->position;
+        d = edge->twin()->next()->next()->vertex()->position;
+        e->newPosition = 3/8 * (A + B) + 1/8 * (C + D);
+        e = nextEdge;
+    }
     // 3. Split every edge in the mesh, in any order. For future reference, we're also going to store some
     // information about which subdivide edges come from splitting an edge in the original mesh, and which edges
     // are new, by setting the flat Edge::isNew. Note that in this loop, we only want to iterate over edges of
@@ -291,6 +319,6 @@ namespace CGL
     // 4. Flip any new edge that connects an old and new vertex.
 
     // 5. Copy the new vertex positions into final Vertex::position.
-
+    
   }
 }
