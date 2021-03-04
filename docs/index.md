@@ -1,6 +1,6 @@
 # <center> **CS 184: Computer Graphics and Imaging, Spring 2021** <!-- omit in toc -->
 
-## <center> **Project 12 Rasterizer** <!-- omit in toc -->
+## <center> **Project 2 Rasterizer** <!-- omit in toc -->
 
 ## <center> **Frank Warren** </center> <!-- omit in toc -->
 
@@ -124,3 +124,37 @@ Here's a cube before and after some flip and split operations:
 | Before | After |
 
 ### **Part 6: Loop Subdivision for Mesh Upsampling**
+
+To achieve very smooth, high definition surfaces requires a large amount of vertices in a mesh. Specifying these points manually in a file will naturally take more effort and memory. Just like with antialiasing, there are useful techniques to convert from a coarse mesh to a higher resolution one. Unfortunately, the methods used to antialias a set of pixel values does not translate to 3D meshes. One reason for this is that pixels are in discrete locations while the vertices in a mesh are real valued!  
+
+The simplest way to upsample a triangle mesh is a method called [loop subdivision](https://en.wikipedia.org/wiki/Loop_subdivision_surface). The basic idea for loop subdivision is to divide each triangle in a mesh into four smaller triangles, and update the location of each of the vertices based on some weighting rule. In this project, I implemented loop subdivision upsampling by: 
+
+1. Calculate all of the new positions (as a weighted sum of neighbors) for the already existing vertices and caching those new positions
+2. Calculate and cache the positions of the vertices that will be created as a result of split operations that occur in the next step.
+3. Split all of the *original* edges and assign the newly created vertices their positions from the values cached in the previous step. It's important that edges and vertices are being assigned a flag `isnew` as appropriate to avoid splitting edges infinitely.
+4. Flip all edges that are between an old and new vertex.
+5. Update vertex positions from cache.
+
+I faced three annoying bugs when implementing loop subdivision:  
+
+1. **Integer division**: The expression I had originally used to weight vertices was in the form of integer division, and *not* floating point division like I had intended. Because weights are a real value between 0 and 1, integer division will always result in a 0 (integer division takes the floor of the result). This led to every face being destroyed after a single loop subdivision step.
+2. **Tracking old edges**: I struggled with figuring out how to keep track of and split only the original edges while skipping edges that were being created as the old ones were being split. I eventually just cached these edges in a vector while processing the edges in a previous step (thanks piazza).
+3. **Flipping the desired edges**: This bug took me the longest by far. I think I spent about half my time on this project trying to figure this one out. When I implemented method for splitting edges, I followed the spec to the T, including the part asserts that the halfedge of a new vertex should point along the edge that was split. I had forgotten this, and when I split every edge in the mesh, I was setting `isNew` values for the four resulting edges to the wrong value! Everything else was fine in my implementation, but this little mistake made the results of loop subdivision look straight up violent.  
+
+Here's an example of using loop subdivision to make a velvety chocolate donut:
+
+| <img src="./images/proj2_18.png" width=300> | <img src="./images/proj2_19.png" width=300> | <img src="./images/proj2_21.png" width=300> | <img src="./images/proj2_22.png" width=300> |
+|:--:|:--:|:--:|:--:|
+| 0 subdivisions | 1 subdivisions | 2 subdivisions | 5 subdivisions |
+
+Notice how all of the edges become smoother. We can preserve edges by pre-splitting them. Because splitting an edge creates a new vertex at that edge, pre-splitting an edge multiple times creates the effect of having a higher density of vertices along that edge. This will subdue the effect of loop subdivision by giving the edge a total higher weight. Here's an example with the doughnut again:
+
+| <img src="./images/proj2_24.png" width=300> | <img src="./images/proj2_29.png" width=300> | <img src="./images/proj2_30.png" width=300> | <img src="./images/proj2_31.png" width=300> |
+|:--:|:--:|:--:|:--:|
+| Original surface | Pre-split edges | After 1 subdivision | After 5 subdivisions |
+
+Using this same idea, we can help a very low resolution cube transform into higher resolution while minimising the loss of its defining features. Basically, all I did was split edges evenly across the faces so the net effect was similar to having the same cube but defined with more vertices. The more vertices you start out with before loop subdivision, the more you can retain sharp features like edges and corners.
+
+| <img src="./images/proj2_32.png" width=300> | <img src="./images/proj2_40.png" width=300> | <img src="./images/proj2_41.png" width=300> | <img src="./images/proj2_42.png" width=300> |
+|:--:|:--:|:--:|:--:|
+| Original cube | Pre-split edges | After 1 subdivision | After 3 subdivisions |

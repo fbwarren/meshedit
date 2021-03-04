@@ -97,9 +97,8 @@ namespace CGL
     // TODO Part 4.
     // This method should flip the given edge and return an iterator to the flipped edge.
     // Avoid flipping boundary edges
-    if (e0->isBoundary())
+    if (e0->halfedge()->face()->isBoundary() or e0->halfedge()->twin()->face()->isBoundary())
         { return e0; }
-
     // Define halfedges
     HalfedgeIter h0 = e0->halfedge();
     HalfedgeIter h1 = h0->next();
@@ -111,25 +110,19 @@ namespace CGL
     HalfedgeIter h7 = h2->twin();
     HalfedgeIter h8 = h4->twin();
     HalfedgeIter h9 = h5->twin();
-
     // Define faces
     FaceIter f0 = h0->face();
     FaceIter f1 = h3->face();
-    if (f0->isBoundary() || f1->isBoundary())
-        { return e0; }
-
     // Define vertices
     VertexIter v0 = h0->vertex();
     VertexIter v1 = h3->vertex();
     VertexIter v2 = h6->vertex();
     VertexIter v3 = h5->vertex();
-
     // Define edges
     EdgeIter e1 = h1->edge();
     EdgeIter e2 = h2->edge();
     EdgeIter e3 = h4->edge();
     EdgeIter e4 = h5 -> edge();
-
     // Set each next, twin, vertex, edge, and face for each inner halfedge
     h0->setNeighbors(h1, h3, v3, e0, f0);
     h1->setNeighbors(h2, h7, v2, e2, f0);
@@ -142,20 +135,17 @@ namespace CGL
     h7->setNeighbors(h7->next(), h1, v0, e2, h7->face());
     h8->setNeighbors(h8->next(), h2, v3, e3, h8->face());
     h9->setNeighbors(h9->next(), h4, v1, e4, h9->face());
-
     // Set vertices
     v0->halfedge() = h2;
     v1->halfedge() = h5;
     v2->halfedge() = h3;
     v3->halfedge() = h0;
-
     // Edges:
     e0->halfedge() = h0;
     e1->halfedge() = h5;
     e2->halfedge() = h1;
     e3->halfedge() = h2;
     e4->halfedge() = h4;
-
     // Faces:
     f0->halfedge() = h0;
     f1->halfedge() = h3;
@@ -168,8 +158,8 @@ namespace CGL
     // TODO Part 5.
     // This method should split the given edge and return an iterator to the newly inserted vertex.
     // The halfedge of this vertex should point along the edge that was split, rather than the new edges.
-      if (e0->isBoundary())
-      { return VertexIter(); }
+      if (e0->halfedge()->face()->isBoundary() or e0->halfedge()->twin()->face()->isBoundary())
+        { return e0->halfedge()->vertex(); }
 
       // Define halfedges
       HalfedgeIter h0 = e0->halfedge();
@@ -194,13 +184,11 @@ namespace CGL
       FaceIter f1 = h3->face();
       FaceIter f2 = newFace();
       FaceIter f3 = newFace();
-      if (f0->isBoundary() || f1->isBoundary())
-      { return VertexIter(); }
 
       // Define vertices
       VertexIter v0 = h0->vertex();
       VertexIter v1 = h3->vertex();
-      VertexIter v2 = h6->vertex();
+      VertexIter v2 = h2->vertex();
       VertexIter v3 = h5->vertex();
       VertexIter v4 = newVertex();
 
@@ -237,11 +225,11 @@ namespace CGL
       h15->setNeighbors(h13, h1, v2, e5, f3);
 
       // Set vertices
-      v0->halfedge() = h4;
-      v1->halfedge() = h14;
-      v2->halfedge() = h2;
-      v3->halfedge() = h11;
-      v4->halfedge() = h13;
+      v0->halfedge() = h0;
+      v1->halfedge() = h12;
+      v2->halfedge() = h15;
+      v3->halfedge() = h5;
+      v4->halfedge() = h3;
       v4->position = lerp(v0->position, v1->position, 0.5);
 
       // Edges:
@@ -250,9 +238,9 @@ namespace CGL
       e2->halfedge() = h2;
       e3->halfedge() = h4;
       e4->halfedge() = h11;
-      e5->halfedge() = h1;
+      e5->halfedge() = h15;
       e6->halfedge() = h0;
-      e7->halfedge() = h5;
+      e7->halfedge() = h10;
 
       // Faces:
       f0->halfedge() = h0;
@@ -276,49 +264,90 @@ namespace CGL
     // TODO Part 6.
     // This routine should increase the number of triangles in the mesh using Loop subdivision.
     // One possible solution is to break up the method as listed below.
+    VertexIter v, nextVertex;
+    EdgeIter e, nextEdge;
 
     // 1. Compute new positions for all the vertices in the input mesh, using the Loop subdivision rule,
     // and store them in Vertex::newPosition. At this point, we also want to mark each vertex as being
     // a vertex of the original mesh.
-    // iterate over all edges in the mesh
-    VertexIter v = mesh.verticesBegin();
+    v = mesh.verticesBegin();
     while (v != mesh.verticesEnd()) {
-        // get the next edge NOW!
-        VertexIter nextVertex = v;
-        nextVertex++;
+        // get the next vertex NOW!
         v->isNew=false;
+        nextVertex = v;
+        nextVertex++;
+        // set newPosition for existing vertices
+        Size n = v->degree();
+        float u = (n == 3) ? (3.0 / 16.0) : (3.0 / (8.0 * n));
         v->computeCentroid();
-
-        int n = v->degree();
-        float u;
-        u = (n == 3) ? (3*n)/16 : 3/8;
-
-        v->newPosition = ((1-u) * v->position) + (u * v->centroid);
+        v->newPosition = ((1 - n * u) * v->position) + (u * v->centroid);
         v = nextVertex;
     }
+
     // 2. Compute the updated vertex positions associated with edges, and store it in Edge::newPosition.
+    // record the original edges so we can split them easily later
+    vector<EdgeIter> oldEdges;
     Vector3D a, b, c, d;
-    EdgeIter e = mesh.edgesBegin();
-    while (v != mesh.verticesEnd()) {
+    e = mesh.edgesBegin();
+    while (e != mesh.edgesEnd()) {
         // get the next edge NOW!
-        EdgeIter nextEdge = e;
+        nextEdge = e;
         nextEdge++;
+        // calculate position of new vertex as weighted sum of surrounding vertices
         HalfedgeIter edge = e->halfedge();
         a = edge->vertex()->position;
         b = edge->twin()->vertex()->position;
         c = edge->next()->next()->vertex()->position;
         d = edge->twin()->next()->next()->vertex()->position;
-        e->newPosition = 3/8 * (A + B) + 1/8 * (C + D);
+        e->newPosition = (3.0 / 8.0) * (a + b) + (1.0 / 8.0) * (c + d);
+        oldEdges.push_back(e);
         e = nextEdge;
     }
+
     // 3. Split every edge in the mesh, in any order. For future reference, we're also going to store some
     // information about which subdivide edges come from splitting an edge in the original mesh, and which edges
     // are new, by setting the flat Edge::isNew. Note that in this loop, we only want to iterate over edges of
     // the original mesh---otherwise, we'll end up splitting edges that we just split (and the loop will never end!)
+    VertexIter newVertex;
+    HalfedgeIter h;
+
+    while (!oldEdges.empty()) {
+        e = oldEdges.back();
+
+        newVertex = mesh.splitEdge(e);
+        newVertex->newPosition = oldEdges.back()->newPosition;  // give the new vertex the precalculated position
+        newVertex->isNew = true;
+
+        h = newVertex->halfedge();
+        h->edge()->isNew = false;
+        h->twin()->next()->twin()->next()->edge()->isNew = false;
+        h->twin()->next()->edge()->isNew = true;
+        h->next()->next()->edge()->isNew = true;
+
+        oldEdges.pop_back();
+    }
 
     // 4. Flip any new edge that connects an old and new vertex.
+    e = mesh.edgesBegin();
+    while (e != mesh.edgesEnd()) {
+        nextEdge = e;
+        nextEdge++;
+
+        // if only one (XOR) of the vertices on a new edge is a new edge, then flip
+        VertexIter v0 = e->halfedge()->vertex();
+        VertexIter v1 = e->halfedge()->twin()->vertex();
+        if (e->isNew and (v0->isNew xor v1->isNew))
+            { mesh.flipEdge(e); }
+        e = nextEdge;
+    }
 
     // 5. Copy the new vertex positions into final Vertex::position.
-    
+    v = mesh.verticesBegin();
+    while(v != mesh.verticesEnd()) {
+        nextVertex = v;
+        nextVertex++;
+        v->position = v->newPosition;
+        v = nextVertex;
+    }
   }
 }

@@ -434,7 +434,19 @@ namespace CGL
          /**
           * computes the average of the neighboring vertex positions and stores it in Vertex::centroid
           */
-         void computeCentroid( void );
+         void computeCentroid( void ) {
+             Vector3D sum = Vector3D(0., 0., 0.);
+             HalfedgeCIter h = this->halfedge();      // get the outgoing half-edge of the vertex
+             do {
+                 HalfedgeCIter h_twin = h->twin(); // get the opposite half-edge
+                 VertexCIter v = h_twin->vertex(); // vertex is the 'source' of the half-edge, so
+                                                    // h->vertex() is v, whereas h_twin->vertex()
+                                                    // is the neighboring vertex
+                 sum += v->position;
+                 h = h_twin->next();               // move to the next outgoing half-edge of the vertex
+             } while(h != this->halfedge());
+             this->centroid = sum;
+         };
 
          Vector3D centroid; ///< average of neighbor positions, storing the value computed by Vertex::computeCentroid()
 
@@ -626,8 +638,8 @@ namespace CGL
           * basic edge operations.  (Can you generalize to other
           * polygonal meshes?)
           */
-           EdgeIter       flipEdge( EdgeIter e ); ///< flip an edge, returning a pointer to the flipped edge
-         VertexIter      splitEdge( EdgeIter e ); ///< split an edge, returning a pointer to the inserted midpoint vertex; the halfedge of this vertex should refer to one of the edges in the original mesh
+         EdgeIter       flipEdge( EdgeIter e ); ///< flip an edge, returning a pointer to the flipped edge
+         VertexIter     splitEdge( EdgeIter e ); ///< split an edge, returning a pointer to the inserted midpoint vertex; the halfedge of this vertex should refer to one of the edges in the original mesh
 
 
          void check_for(HalfedgeIter h) {
