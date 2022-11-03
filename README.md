@@ -1,27 +1,25 @@
-You can view the spec for this project at [MeshEdit](https://cs184.eecs.berkeley.edu/sp21/docs/proj2).
-
 ## **Contents** <!-- omit in toc -->
 
 - [**Overview**](#overview)
-- [**Section I: Bezier Curves and Surfaces**](#section-i-bezier-curves-and-surfaces)
-  - [**Part 1: de Casteljau's Algorithm**](#part-1-de-casteljaus-algorithm)
-  - [**Part 2: Bezier Surfaces with Separable 1D de Casteljau**](#part-2-bezier-surfaces-with-separable-1d-de-casteljau)
-- [**Section II: Triangle Meshes and Half-Edge Data**](#section-ii-triangle-meshes-and-half-edge-data)
-  - [**Part 3: Area-Weighted Vertex Normals**](#part-3-area-weighted-vertex-normals)
-  - [**Part 4: Edge Flip**](#part-4-edge-flip)
-  - [**Part 5: Edge Split**](#part-5-edge-split)
-  - [**Part 6: Loop Subdivision for Mesh Upsampling**](#part-6-loop-subdivision-for-mesh-upsampling)
+- [**Bezier Curves and Surfaces**](#bezier-curves-and-surfaces)
+  - [**de Casteljau's Algorithm**](#de-casteljaus-algorithm)
+  - [**Bezier Surfaces with Separable 1D de Casteljau**](#bezier-surfaces-with-separable-1d-de-casteljau)
+- [**Triangle Meshes and Half-Edge Data**](#triangle-meshes-and-half-edge-data)
+  - [**Area-Weighted Vertex Normals**](#area-weighted-vertex-normals)
+  - [**Edge Flip**](#edge-flip)
+  - [**Edge Split**](#edge-split)
+  - [**Loop Subdivision for Mesh Upsampling**](#loop-subdivision-for-mesh-upsampling)
 
 ## **Overview**
 
 The purpose of this project was to implement explore topics on geometric modeing, including Bezier curves and surfaces, the de Casteljau algorithm for calculating those, manipulating triangle meshes, and loop subdivision. The first section of this project deals with Bezier curves and surfaces, and the second section deals with triangle meshes and the half-edge data structure.  
 I completed this project alone.
 
-## **Section I: Bezier Curves and Surfaces**
+## **Bezier Curves and Surfaces**
 
 [Bezier curves](https://en.wikipedia.org/wiki/B%C3%A9zier_curve) are the most popular way to create curves from a set of points. A Bezier Curve can be defined with two or more control points. $(n+1)$ points are needed to define a Bezier curve of degree $n$. There's multiple ways to define a Bezier curve given a set of points. One could use linear algebra to define a degree $n$ polynomial given $(n+1)$ points, and plot the polynomial to include the start and end points. There is a more practical method called [de Casteljau's algorithm](https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm).
 
-### **Part 1: de Casteljau's Algorithm**  
+### **de Casteljau's Algorithm**  
 
 [de Casteljau's algorithm](https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm) is a recursive algorithm for evaluating Bezier curves. Basically, it takes a set of points along with a parameter $t$ and performs linear interpolations on each pair of neighboring points. Then this same calculation is performed recursively on these intermediate points using the same parameter $t$ until no more pairs of intermediate points can be found. At the end of this algorithm, we are left with a single point that will be on the final Bezier curve.  
 
@@ -43,14 +41,14 @@ Here's an example of what the recursive de Casteljau algorithm looks like at eac
 |:--:|
 | Different $t$ value |
 
-### **Part 2: Bezier Surfaces with Separable 1D de Casteljau**
+### **Bezier Surfaces with Separable 1D de Casteljau**
 
 In this part, the de Casteljau algorithm will be extended to create curved surfaces in three dimensions. The implementation for this is pretty much the same as for Bezier curves, except now we have 4 rows of 4 points.Each row of four points represents a Bezier curve that is parameterized by some value $u$, and after the four Bezier curves are created, then we can create another Bezier curve along the other axis by using the four points at $u$ on the four Bezier curves, and parameterizing them on $v$.  
 
 Here's the [Utah teapot](https://en.wikipedia.org/wiki/Utah_teapot) rendered using Bezier surfaces:  
 <center><img src="./docs/images/proj2_9.png" width=600></center>
 
-## **Section II: Triangle Meshes and Half-Edge Data**
+## **Triangle Meshes and Half-Edge Data**
 
 In this section, we will use triangle meshes to model 3D objects. Although Bezier surfaces are better at representing curves smoothly and require less memory than triangle meshes, triangle meshes are used more frequently because Bezier surfaces because it's difficult to calculate their intersections with other surfaces.  
 
@@ -66,7 +64,7 @@ struct Halfedge {
 }
 ```
 
-### **Part 3: Area-Weighted Vertex Normals**
+### **Area-Weighted Vertex Normals**
 
 A simple method for shading known as [flat shading](https://en.wikipedia.org/wiki/Shading#Flat_shading) is already implemented at this point in the project. In this shading technique, lighting is evaluated once per face, where the intensity of the light to be displayed on a face is determined based on the normal to that face. (i.e. how far away the face is from the light, and the orientation of the face in relation to the light). Because the light on each face is only evaluated once per face, the result is not very smooth.  
 
@@ -86,7 +84,7 @@ Here's what the Utah teapot looks with flat shading, and with Phong shading:
 |:--:|:--:|
 | Flat Shading | Phong Shading |
 
-### **Part 4: Edge Flip**
+### **Edge Flip**
 
 One of the basic operations that a half-edge data structure needs to provide is edge flips. Given a pair of triangles, a flip operation performed on their shared edge will convert the original pair of triangles into a new pair that share an edge formed by the vertices that were *not* in the original shared edge:  
 
@@ -104,7 +102,7 @@ Here's a mesh of a cute cow before and after some edge flips:
 |:--:|:--:|
 | Before flips | After flips |
 
-### **Part 5: Edge Split**
+### **Edge Split**
 
 Another basic operation for half-edge data structures is edge splits. Given a pair of triangles, a split operation on their shared edge creates a new vertex in the center of the edge and then edges are formed between the new vertex and every other vertex in the two triangles:  
 
@@ -118,7 +116,7 @@ Here's a cube before and after some flip and split operations:
 |:--:|:--:|
 | Before | After |
 
-### **Part 6: Loop Subdivision for Mesh Upsampling**
+### **Loop Subdivision for Mesh Upsampling**
 
 To achieve very smooth, high definition surfaces requires a large amount of vertices in a mesh. Specifying these points manually in a file will naturally take more effort and memory. Just like with antialiasing, there are useful techniques to convert from a coarse mesh to a higher resolution one. Unfortunately, the methods used to antialias a set of pixel values does not translate to 3D meshes. One reason for this is that pixels are in discrete locations while the vertices in a mesh are real valued!  
 
