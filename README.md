@@ -1,3 +1,86 @@
+# meshedit
+
+The general command for running the executable is `./meshedit <PATH_TO_FILE>`  
+This program works on Bezier Curve files (`.bzc`), Bezier Surface files (`.bez`), and COLLADA Mesh files (`.dae`).  
+You can find samples in their respective folders.
+
+Here's the controls when viewing Bezier curves:
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><kbd>E</kbd></td>
+<td>Perform one call to <code>BezierCurve::evaluateStep(...)</code> and cycle through levels</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>C</kbd></td>
+<td>Toggle whether or not the fully evaluated Bezier curve is drawn to the screen</td>
+</tr>
+</tbody>
+</table>
+
+Here's the controls when viewing meshes:
+
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><kbd>Q</kbd></td>
+<td>Toggle using vertex normals (Part 3)</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>F</kbd></td>
+<td>Flip the selected edge (Part 4)</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>S</kbd></td>
+<td>Split the selected edge (Part 5)</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>L</kbd></td>
+<td>Upsample the current mesh (Part 6)</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>N</kbd></td>
+<td>Select the next half-edge</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>T</kbd></td>
+<td>Select the twin half-edge</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>W</kbd></td>
+<td>Toggle wireframe</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>I</kbd></td>
+<td>Toggle information overlay</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>SPACE</kbd></td>
+<td>Reset camera to default position</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>0</kbd> - <kbd>9</kbd></td>
+<td>Switch between GLSL shaders</td>
+</tr>
+<tr>
+<td style="text-align:center"><kbd>R</kbd></td>
+<td>Recompile shaders</td>
+</tr>
+</tbody>
+</table>
+
 ## **Contents** <!-- omit in toc -->
 
 - [**Overview**](#overview)
